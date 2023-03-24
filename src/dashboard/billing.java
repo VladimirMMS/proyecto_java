@@ -70,10 +70,10 @@ public final class billing extends javax.swing.JFrame {
     void getEmployee() {
         try {
             Statement sqlQuery = cn.createStatement();
-            String sqlC = "SELECT id, name FROM User";
+            String sqlC = "SELECT id, username FROM User";
             ResultSet rs = sqlQuery.executeQuery(sqlC);
             while(rs.next()) {
-              employe_b.addItem(rs.getString("name"));
+              employe_b.addItem(rs.getString("username"));
             }     
         }
         catch(SQLException ex) {

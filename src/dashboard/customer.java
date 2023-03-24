@@ -56,8 +56,7 @@ public final class customer extends javax.swing.JFrame {
     }
     void crearClient(){
          try {
-             String sqlC="INSERT INTO Customer(name, lastname,card_id, phone, credit) "+ 
-                     "VALUES("+ "'"+nombre.getText()+"', "+ 
+             String sqlC="INSERT INTO Customer(name, lastname,card_id, phone, credit) "+ "VALUES("+ "'"+nombre.getText()+"', "+ 
                      "'"+apellido.getText()+"', "+ 
                      "'"+cedula.getText()+"',"+ 
                      "'"+phone.getText()+"',"+ "'"+credit.getText()+"' )";
