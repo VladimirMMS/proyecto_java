@@ -11,15 +11,25 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import javaapplication1.Articule_List;
 import javaapplication1.conectar1;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import net.sf.jasperreports.engine.util.JRLoader;
+import net.sf.jasperreports.view.JasperViewer;
 
 /**
  *
  * @author vladi
  */
-public class payProcess extends javax.swing.JFrame {
+public final class payProcess extends javax.swing.JFrame {
     conectar1 cc = new conectar1();
     Connection cn = cc.conexion();
     float pay;
@@ -30,7 +40,9 @@ public class payProcess extends javax.swing.JFrame {
     String userN;
     String address = "F7PR+333, Santiago De Los Caballeros";
     String phone = "8097757685";
-    public payProcess(float toPay, float totalItebis, DefaultTableModel table, String customer, String user) {
+    String total;
+    boolean isPay=false;
+    public payProcess(float toPay, float totalItebis, DefaultTableModel table, String customer, String user, String total) {
         initComponents();
         total_pay.setEditable(false);
         devolver.setEditable(false);
@@ -41,10 +53,45 @@ public class payProcess extends javax.swing.JFrame {
         this.billing_t=table;
         this.customerN=customer;
         this.userN=user;
+        this.total=total;
         total_pay.setText(String.valueOf(toPay));
         
-        
     }
+    void print_billing() {
+        ArrayList list = new ArrayList();
+ 
+        for (int i = 0; i < billing_t.getRowCount(); i++) {
+            String nombre=(String)billing_t.getValueAt(i, 0);
+            System.out.println(nombre);
+            String precio=(String)billing_t.getValueAt(i, 1);
+            String cantidad=(String)billing_t.getValueAt(i, 2);
+            String itebis_e=(String)billing_t.getValueAt(i, 4);
+            String subtotal=(String)billing_t.getValueAt(i, 5);
+            Articule_List list_art = new Articule_List(nombre, precio, cantidad,itebis_e, subtotal);
+            list.add(list_art);
+        }
+        JasperReport jr;
+        try {
+            jr = (JasperReport) JRLoader.loadObjectFromFile("src/report/billing_print.jasper");
+            HashMap param = new HashMap();
+            param.put("company", company_name.getText());
+            param.put("billing_id", rnc.getText());
+            param.put("subtotal", total);
+            String ite =  String.valueOf(itebis);
+            param.put("itebis", ite);
+            param.put("total", total_pay.getText());
+            JasperPrint jp = JasperFillManager.fillReport(jr, param, new JRBeanCollectionDataSource(list));
+            JasperViewer jv = new JasperViewer(jp, false);
+            jv.setVisible(true);
+            
+        }
+        catch(JRException ex) {
+            System.out.println(ex);
+        
+        }
+    }
+        
+
     void quantityToReturn() {
         float quant =Float.parseFloat(quantity_d.getText())-pay;
         devolver.setText(String.valueOf(quant));
@@ -64,7 +111,6 @@ public class payProcess extends javax.swing.JFrame {
             String sqlC = "SELECT id FROM User" +" WHERE username = + '"+userN+"'";
             ResultSet rs = sqlQuery.executeQuery(sqlC);
             while(rs.next()) {
-                System.out.println(rs.getInt("id"));
                 id = rs.getInt("id");
             }
         }
@@ -88,27 +134,126 @@ public class payProcess extends javax.swing.JFrame {
         }
         return id;
     }
+    float verifyCustomerCredit() {
+        float credit=0;
+        try {
+            Statement sqlQuery = cn.createStatement();
+            String sqlC = "SELECT credit FROM Customer" +" WHERE name = + '"+customerN+"'";
+            ResultSet rs = sqlQuery.executeQuery(sqlC);
+            while(rs.next()) {
+                credit = rs.getFloat("credit");
+            }
+        }
+        catch(SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex);
+        }
+        return credit;
+        
+    }
+    int getArticleId(String article) {
+        int id=0;
+        try {
+            Statement sqlQuery = cn.createStatement();
+            String sqlC = "SELECT id FROM Articule" +" WHERE name = + '"+article+"'";
+            ResultSet rs = sqlQuery.executeQuery(sqlC);
+            while(rs.next()) {
+                id = rs.getInt("id");
+            }
+        }
+        catch(SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex);
+        }
+        return id;
+    }
+     int getArticuleQuantity(int articleId) {
+        int quantity=0;
+        try {
+            Statement sqlQuery = cn.createStatement();
+            String sqlC = "SELECT quantity FROM Articule" +" WHERE id = + '"+articleId+"'";
+            ResultSet rs = sqlQuery.executeQuery(sqlC);
+            while(rs.next()) {
+                quantity = rs.getInt("quantity");
+            }
+        }
+        catch(SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex);
+        }
+        return quantity;
+    }
+    
+    void updateArticule(int quantity_param, int art_id) {
+        try {
+             String sqlC="UPDATE Articule SET quantity='"+quantity_param+"' WHERE id='"+art_id+"'";
+            PreparedStatement insert_user = cn.prepareStatement(sqlC);
+            int n = insert_user.executeUpdate();
+            if(n > 0) {
+                return;
+            }
+        } catch(SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex);
+        }
+    }
+    
+    int insertBillingDetails(int billing_id) {
+        int count=0;
+        for (int i = 0; i < billing_t.getRowCount(); i++) {
+            String article =(String) billing_t.getValueAt(i, 0);
+            int articleId = getArticleId(article);
+            String quantity =(String) billing_t.getValueAt(i, 2);
+            int quantity_int = (Integer) Integer.parseInt(quantity);
+            int quantity_db = getArticuleQuantity(articleId);
+            String sub_total = (String) billing_t.getValueAt(i, 5);
+            updateArticule(quantity_db-quantity_int, articleId);
+            try {
+             String sqlC="INSERT INTO Billing_Details(quantity, billing_id, articule_id, sub_total) "+ "VALUES("+ "'"+quantity_int+"', "+ 
+                     "'"+billing_id+"',"+ 
+                     "'"+articleId+"',"+
+                     "'"+sub_total+"')";
+             
+            PreparedStatement insert_user = cn.prepareStatement(sqlC);
+            int n = insert_user.executeUpdate();
+            if(n >0) {
+                count=count+1;
+              
+            }
+        } catch(SQLException ex) {
+            System.out.println(ex);
+            JOptionPane.showMessageDialog(null, ex);
+        }
+        }
+        if(count==billing_t.getRowCount()) {
+            isPay=true;
+            JOptionPane.showMessageDialog(null, "La factura se ha pagado correctamente");
+            return count;
+        }
+        return count;
+    }
+    
     void addBillingToDb() {
        String date = getCurrentDate();
        int employeId=getEmployee();
        int customerId=getCustomer();
-       float total = Float.parseFloat(total_pay.getText());
+       float total_p = Float.parseFloat(total_pay.getText());
        try {
              String sqlC="INSERT INTO Billing(company_name, address,company_phone, date_created, total, itebis_total, debt, user_id, customer_id, pay_type) "+ "VALUES("+ "'"+company_name.getText()+"', "+ 
                      "'"+address+"',"+ 
                      "'"+phone+"',"+ 
                      "'"+date+"',"+ 
-                     "'"+total+"',"+
+                     "'"+total_p+"',"+
                      "'"+itebis+"',"+
                      "'"+debt+"',"+
                      "'"+employeId+"',"+
                      "'"+customerId+"',"+
                      "'"+articule_b.getSelectedItem()+"')";
              
-            PreparedStatement insert_user = cn.prepareStatement(sqlC);
+            PreparedStatement insert_user = cn.prepareStatement(sqlC, Statement.RETURN_GENERATED_KEYS);
             int n = insert_user.executeUpdate();
-            if(n > 0) {
-                JOptionPane.showMessageDialog(null, "Factura creada");
+            if(n >0) {
+                ResultSet rs = insert_user.getGeneratedKeys();
+                if (rs.next()) {
+                    int id = rs.getInt(1);
+                    insertBillingDetails(id);
+                }
             }
         } catch(SQLException ex) {
             System.out.println(ex);
@@ -167,7 +312,7 @@ public class payProcess extends javax.swing.JFrame {
         jLabel3.setText("Tipo de pago:");
 
         articule_b.setBackground(new java.awt.Color(242, 242, 242));
-        articule_b.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Credito", "Contado" }));
+        articule_b.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Contado", "Credito" }));
 
         jLabel4.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel4.setText("Cantidad a depositar:");
@@ -338,21 +483,44 @@ public class payProcess extends javax.swing.JFrame {
     }//GEN-LAST:event_devolverActionPerformed
 
     private void add_button1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_add_button1ActionPerformed
-        System.out.println("siiiiiiiiiiiiiiiiiiiiii");
-        if(Float.parseFloat(quantity_d.getText()) >=pay) {
-            if(articule_b.getSelectedItem().equals("Contado")) {
+        if(quantity_d.getText().equals("") && articule_b.getSelectedItem().equals("Contado")) {
+            JOptionPane.showMessageDialog(null, "Por favor digite digite la cantidad a pagar");
+            return;
+        }
+        
+        if(articule_b.getSelectedItem().equals("Contado")) {
+             if(Float.parseFloat(quantity_d.getText()) >=pay) {
                 quantityToReturn();
                 addBillingToDb();
+             }
+             else {
+                 JOptionPane.showMessageDialog(null, "La cantidad de dinero que ingreso es menor a la que tiene que pagar");
+             }
+        }
+        else {
+                float credit = verifyCustomerCredit();
+                if(credit >= pay) {
+                    debt= pay;
+                    addBillingToDb();
+                }
+                else {
+                    JOptionPane.showMessageDialog(null, "Su credito no es suficiente para realizar la compra");
+                }
             }
+        
+        
+        
             
-        }
-        else{
-            JOptionPane.showMessageDialog(null, "La cantidad de dinero que ingreso es menor a la que tiene que pagar");
-        }
+      
     }//GEN-LAST:event_add_button1ActionPerformed
 
     private void add_button2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_add_button2ActionPerformed
-        // TODO add your handling code here:
+        if(isPay) {
+            print_billing();
+            return;
+        }
+        JOptionPane.showMessageDialog(null, "Tiene que proceder al pago antes de imprimir");
+        
     }//GEN-LAST:event_add_button2ActionPerformed
 
     private void total_payKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_total_payKeyPressed

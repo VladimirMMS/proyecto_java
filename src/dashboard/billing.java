@@ -39,7 +39,7 @@ public final class billing extends javax.swing.JFrame {
     void getArticules() {
         try {
             Statement sqlQuery = cn.createStatement();
-            String sqlC = "SELECT id, name FROM Articule";
+            String sqlC = "SELECT id,name FROM Articule" +" WHERE quantity > + '"+0+"'";
             ResultSet rs = sqlQuery.executeQuery(sqlC);
             while(rs.next()) {
               articule_b.addItem(rs.getString("name"));
@@ -49,6 +49,21 @@ public final class billing extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, ex);
         }
     }
+    int getArticuleQuantity(String artname) {
+        int art_quantity=0;
+        try {
+            Statement sqlQuery = cn.createStatement();
+            String sqlC = "SELECT id,quantity FROM Articule" +" WHERE name = + '"+artname+"'";
+            ResultSet rs = sqlQuery.executeQuery(sqlC);
+            while(rs.next()) {
+              art_quantity=rs.getInt("quantity");
+            }  
+        }
+        catch(SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex);
+        }
+        return art_quantity;
+    }
     void deleteRow() {
         DefaultTableModel table = (DefaultTableModel) billing_t.getModel();
         String row_total=table.getValueAt(row_table, 5).toString();
@@ -56,10 +71,11 @@ public final class billing extends javax.swing.JFrame {
         float total_got= Float.parseFloat(total.getText());
        
             
-        float itebis_to_money=(total_got*Float.parseFloat((String) table.getValueAt(row_table, 3).toString()))/100;
+        float itebis_to_money=(sub_to*Float.parseFloat((String) table.getValueAt(row_table, 3).toString()))/100;
         float total_got_t= Float.parseFloat(itebis_t.getText());
         float itebis_total = Float.parseFloat(total_con.getText());
-        total_con.setText(String.valueOf(itebis_total-(total_got+total_got_t)));
+        float totoal_from_t = Float.parseFloat((String) table.getValueAt(row_table, 5));
+        total_con.setText(String.valueOf(itebis_total-(itebis_to_money+totoal_from_t)));
         total_got_t=total_got_t-itebis_to_money;
         itebis_t.setText(String.valueOf(total_got_t));
         total_got=total_got-sub_to;
@@ -94,13 +110,24 @@ public final class billing extends javax.swing.JFrame {
         }
     }
     void verifyArticule() {
+        int quanty = Integer.parseInt(quantity.getText());
+        String item =(String) articule_b.getSelectedItem(); 
+        int quantity_a = getArticuleQuantity(item);
+        if(quantity_a< quanty) {
+            JOptionPane.showMessageDialog(null, "La catidad de articulo que quiere agregar no la tenemos en inventario");
+            JOptionPane.showMessageDialog(null, "Actualmente tenemos "+quantity_a);
+            if(add_button.getText().equals("Actualizar Facturacion")) {
+                add_button.setText("Agregar Facturacion");
+        }
+            return;
+        }
         if(billing_t.getRowCount() == 0) {
             addArticule();
             return;
         }
         for (int i = 0; i < billing_t.getRowCount(); i++) {
             if(articule_b.getSelectedItem().equals(billing_t.getValueAt(i, 0))) {
-                int quanty = Integer.parseInt(quantity.getText());
+                
                 String quan_t=String.valueOf(billing_t.getValueAt(i, 2));
                 int row_quantity = Integer.parseInt(quan_t);
                 int last_quantity = quanty+row_quantity;
@@ -119,7 +146,8 @@ public final class billing extends javax.swing.JFrame {
                 float itebis_to_money=Float.parseFloat((String) price_column)*Float.parseFloat((String) billing_t.getValueAt(i, 3))/100;
                 float total_mul = (total_itebis_to_float+itebis_to_money)*quanty;
                 itebis_t.setText(String.valueOf(total_mul));
-                total_con.setText(String.valueOf(itebis_to_money+total_to_float));
+                
+                total_con.setText(String.valueOf(total_mul+total_to_float));
                 return;
             }
         }
@@ -129,6 +157,7 @@ public final class billing extends javax.swing.JFrame {
     void addArticule() {
         DefaultTableModel table = (DefaultTableModel) billing_t.getModel();
         String [] registros = new String[6];
+        float total_sum_itebis=0;
         try {
             Statement sqlQuery = cn.createStatement();
             String sqlC = "SELECT name,price,percent,price FROM Articule INNER JOIN Itebis WHERE Articule.name='"+articule_b.getSelectedItem()+"' AND Itebis.id=Articule.itbis_id";
@@ -145,6 +174,7 @@ public final class billing extends javax.swing.JFrame {
               float subtotal = price_subtotal*  quant_int;
               float total_got;
               float total_sum;
+              
               registros[5]=String.valueOf(subtotal);
               if(!total.getText().equals("")) {
                   total_got=Float.parseFloat(total.getText());
@@ -158,15 +188,19 @@ public final class billing extends javax.swing.JFrame {
               float precioXq=price_subtotal* Integer.parseInt(quantity.getText());
                 
               float itebis_to_money=(precioXq*Float.parseFloat((String) rs.getString("percent")))/100;
-              if(!itebis_t.getText().equals("")) {  
+               
+              if(!itebis_t.getText().equals("")) {
+         
                 float total_itebis_got = Float.parseFloat(itebis_t.getText());
-                float total_sum_itebis= itebis_to_money+ total_itebis_got;
+                total_sum_itebis= itebis_to_money+ total_itebis_got;
                 itebis_t.setText(String.valueOf(total_sum_itebis));
               }
               else {
                   itebis_t.setText(String.valueOf(itebis_to_money));
+                  total_sum_itebis=itebis_to_money;
               }
-              total_con.setText(String.valueOf(itebis_to_money+total_sum));
+       
+              total_con.setText(String.valueOf(total_sum_itebis+total_sum));
             }     
             table.addRow(registros);
         }
@@ -440,7 +474,7 @@ public final class billing extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void quantityActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_quantityActionPerformed
-        // TODO add your handling code here:
+
     }//GEN-LAST:event_quantityActionPerformed
 
     private void add_buttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_add_buttonActionPerformed
@@ -451,10 +485,8 @@ public final class billing extends javax.swing.JFrame {
        }
         if(add_button.getText().equals("Actualizar Facturacion")) {
             deleteRow();
-            chancheButtomName();
-            
+            chancheButtomName();   
         }
-    
         verifyArticule();     
         clear();
     }//GEN-LAST:event_add_buttonActionPerformed
@@ -478,7 +510,7 @@ public final class billing extends javax.swing.JFrame {
          String customer =(String) client_b.getSelectedItem();
         new payProcess(Float.parseFloat(total_con.getText()), 
                 Float.parseFloat(itebis_t.getText()), 
-                (DefaultTableModel) billing_t.getModel(), customer,employe ).setVisible(true);
+                (DefaultTableModel) billing_t.getModel(), customer,employe, total.getText() ).setVisible(true);
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void billing_tMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_billing_tMouseClicked
@@ -492,7 +524,6 @@ public final class billing extends javax.swing.JFrame {
             chancheButtomName();
         }
     }//GEN-LAST:event_billing_tMouseClicked
-
 
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
