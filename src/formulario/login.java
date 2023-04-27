@@ -4,15 +4,16 @@
  */
 package formulario;
 
+import dashboard.selectSection;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import javaapplication1.conectar1;
 import javax.swing.JOptionPane;
 
 
-/**
- *
- * @author vladi
- */
+
 public class login extends javax.swing.JFrame {
     conectar1 cc = new conectar1();
     Connection cn = cc.conexion();
@@ -43,9 +44,9 @@ public class login extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBackground(new java.awt.Color(102, 255, 204));
 
-        jPanel1.setBackground(new java.awt.Color(102, 153, 255));
+        jPanel1.setBackground(new java.awt.Color(0, 204, 204));
 
-        jPanel2.setBackground(new java.awt.Color(102, 153, 255));
+        jPanel2.setBackground(new java.awt.Color(0, 204, 204));
 
         jLabel2.setFont(new java.awt.Font("Times New Roman", 0, 18)); // NOI18N
         jLabel2.setText("Username:");
@@ -176,15 +177,34 @@ public class login extends javax.swing.JFrame {
         if(username.getText().equals("")) {
             JOptionPane.showMessageDialog(null, "Username esta en blanco");
             username.requestFocus();
-            return;
-            
+            return; 
         }
         password.requestFocus();
     }//GEN-LAST:event_usernameActionPerformed
 
     private void loginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginActionPerformed
-        if(username.getText().equals("") && password.getText().equals("")) {
+        if(username.getText().equals("") || password.getText().equals("")) {
             JOptionPane.showMessageDialog(null, "Los campos deben tener caracteres");
+        }
+        try {
+            Statement sqlQuery = cn.createStatement();
+            String sqlC = "SELECT id,name, username, password FROM User" +" WHERE username = + '"+username.getText()+"'";
+            ResultSet rs = sqlQuery.executeQuery(sqlC);
+            while(rs.next()) {
+                String dbPassword = rs.getString("password");
+                if(password.getText().equals(dbPassword)) {
+                    this.dispose();
+                    new selectSection(username.getText()).setVisible(true);
+                    JOptionPane.showMessageDialog(null, "Has iniciado sesion satisfactoriamente " + username.getText());
+                    return;
+                }
+                JOptionPane.showMessageDialog(null, "Usuario / Contraseña no coinciden");
+                return; 
+            }
+            JOptionPane.showMessageDialog(null, "Usuario / Contraseña no coinciden");
+        }
+        catch(SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex);
         }
     }//GEN-LAST:event_loginActionPerformed
 
@@ -192,9 +212,6 @@ public class login extends javax.swing.JFrame {
         openSignUp();
     }//GEN-LAST:event_crearActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {

@@ -25,12 +25,7 @@ public class signUp extends javax.swing.JFrame {
     }
     void signUpUser() {
         try {
-            String sqlC="INSERT INTO User(name, lastname, username, password) "
-                    + "VALUES("
-                    + "'"+name.getText()+"', "
-                    + "'"+lastname.getText()+"', "
-                    + "'"+username.getText()+"', "
-                    + "'"+password.getText()+"')";
+                String sqlC="INSERT INTO User(name, lastname, username, password) "+ "VALUES("+ "'"+name.getText()+"', "+ "'"+lastname.getText()+"', "+ "'"+username.getText()+"', "+ "'"+password.getText()+"')";
             PreparedStatement insert_user = cn.prepareStatement(sqlC);
             int n = insert_user.executeUpdate();
             if(n > 0) {
@@ -64,9 +59,9 @@ public class signUp extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jPanel1.setBackground(new java.awt.Color(102, 153, 255));
+        jPanel1.setBackground(new java.awt.Color(0, 204, 204));
 
-        jPanel2.setBackground(new java.awt.Color(102, 153, 255));
+        jPanel2.setBackground(new java.awt.Color(0, 204, 204));
 
         jLabel1.setFont(new java.awt.Font("Times New Roman", 0, 36)); // NOI18N
         jLabel1.setText("Registrarse");
