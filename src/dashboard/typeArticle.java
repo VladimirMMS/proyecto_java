@@ -171,7 +171,15 @@ public final class typeArticle extends javax.swing.JFrame {
             new String [] {
                 "ID", "Nombre del tipo de articulo"
             }
-        ));
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
         type_art_t.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 type_art_tMouseClicked(evt);

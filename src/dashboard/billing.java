@@ -289,7 +289,15 @@ public final class billing extends javax.swing.JFrame {
             new String [] {
                 "Articulo", "Precio", "Cantidad", "Itebis del Articulo", "Subtotal Itebis", "Subtotal"
             }
-        ));
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
         billing_t.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 billing_tMouseClicked(evt);
@@ -511,6 +519,7 @@ public final class billing extends javax.swing.JFrame {
         new payProcess(Float.parseFloat(total_con.getText()), 
                 Float.parseFloat(itebis_t.getText()), 
                 (DefaultTableModel) billing_t.getModel(), customer,employe, total.getText() ).setVisible(true);
+        
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void billing_tMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_billing_tMouseClicked

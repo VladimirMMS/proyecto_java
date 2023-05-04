@@ -237,7 +237,15 @@ public final class employee extends javax.swing.JFrame {
             new String [] {
                 "ID", "Nombre", "Apellido", "Username", "Contraseña"
             }
-        ));
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
         employee_t.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 employee_tMouseClicked(evt);

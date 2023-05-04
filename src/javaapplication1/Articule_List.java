@@ -33,5 +33,4 @@ public class Articule_List {
     public String gettotalt() {
         return totalt;
     }
-    
 }

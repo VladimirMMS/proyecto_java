@@ -57,6 +57,11 @@ public final class payProcess extends javax.swing.JFrame {
         total_pay.setText(String.valueOf(toPay));
         
     }
+    
+    
+    void clarData() {
+        billing_t.getDataVector().clear();
+    }
     void print_billing() {
         ArrayList list = new ArrayList();
  
@@ -253,6 +258,7 @@ public final class payProcess extends javax.swing.JFrame {
                 if (rs.next()) {
                     int id = rs.getInt(1);
                     insertBillingDetails(id);
+                    
                 }
             }
         } catch(SQLException ex) {
